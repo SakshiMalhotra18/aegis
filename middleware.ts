@@ -1,4 +1,9 @@
-import { auth } from "@/lib/auth/auth";
+import NextAuth from "next-auth";
+
+const { auth } = NextAuth({
+  providers: [],
+  pages: { signIn: "/login" },
+});
 
 export default auth((req) => {
   if (!req.auth && req.nextUrl.pathname.startsWith("/dashboard")) {

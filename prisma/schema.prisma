@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum AgentStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PolicyStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum AuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  APPROVED
+  REJECTED
+  TRIGGERED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  password      String
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  agents        Agent[]
+  policies      Policy[]
+  approvals     Approval[]
+  auditLogs     AuditLog[]
+}
+
+model Agent {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  model       String
+  status      AgentStatus @default(ACTIVE)
+  riskLevel   RiskLevel   @default(LOW)
+  blastRadius Int         @default(0)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  policies  Policy[]
+  approvals Approval[]
+  auditLogs AuditLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model Policy {
+  id          String       @id @default(uuid())
+  name        String
+  description String
+  rules       String
+  status      PolicyStatus @default(ACTIVE)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  agentId String?
+  agent   Agent?  @relation(fields: [agentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([agentId])
+}
+
+model Approval {
+  id     String         @id @default(uuid())
+  status ApprovalStatus @default(PENDING)
+  reason String?
+
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([agentId])
+  @@index([userId])
+}
+
+model AuditLog {
+  id      String      @id @default(uuid())
+  action  AuditAction
+  message String
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  agentId String?
+  agent   Agent?  @relation(fields: [agentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([agentId])
+}

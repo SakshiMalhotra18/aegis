@@ -16,12 +16,12 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await signIn("credentials", {
+      const res = (await signIn("credentials", {
         email,
         password,
         redirect: true,
         callbackUrl: "/dashboard",
-      });
+      })) as any;
       if (res?.error) {
         setError("Invalid email or password. Please try again.");
       }

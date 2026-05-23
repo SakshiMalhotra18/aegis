@@ -48,19 +48,16 @@ export default function AuditPage() {
         fetch("/api/audit").then(r => r.json())
     })
 
-  const filtered = logs
-    .filter(l =>
-      actionFilter === "all" ||
-      l.action === actionFilter)
-    .filter(l =>
-      l.message.toLowerCase()
-        .includes(search.toLowerCase()))
-    .filter(l =>
-      !dateFrom ||
-      new Date(l.createdAt) >= new Date(dateFrom))
-    .filter(l =>
-      !dateTo ||
-      new Date(l.createdAt) <= new Date(dateTo))
+  const filtered = Array.isArray(logs) ? logs.filter((log: any) => {
+    const matchesAction = actionFilter === "all" || log.action === actionFilter
+    const matchesSearch = !search || 
+      log.message.toLowerCase().includes(search.toLowerCase()) ||
+      log.user?.name?.toLowerCase().includes(search.toLowerCase()) ||
+      log.agent?.name?.toLowerCase().includes(search.toLowerCase())
+    const matchesDateFrom = !dateFrom || new Date(log.createdAt) >= new Date(dateFrom)
+    const matchesDateTo = !dateTo || new Date(log.createdAt) <= new Date(dateTo)
+    return matchesAction && matchesSearch && matchesDateFrom && matchesDateTo
+  }) : []
 
   const totalPages = Math.ceil(
     filtered.length / PAGE_SIZE)

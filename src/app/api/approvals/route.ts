@@ -12,7 +12,8 @@ export async function GET() {
       },
     });
     return NextResponse.json(approvals);
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch approvals" }, { status: 500 });
+  } catch (error) {
+    console.error("API Approvals Error:", error);
+    return NextResponse.json({ error: "Failed to fetch approvals", details: String(error) }, { status: 500 });
   }
 }

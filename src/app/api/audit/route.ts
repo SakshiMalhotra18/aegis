@@ -9,7 +9,8 @@ export async function GET() {
       include: { user: { select: { name: true, email: true } }, agent: { select: { name: true } } },
     });
     return NextResponse.json(logs);
-  } catch {
-    return NextResponse.json({ error: "Failed to fetch audit logs" }, { status: 500 });
+  } catch (error) {
+    console.error("API Audit Error:", error);
+    return NextResponse.json({ error: "Failed to fetch audit logs", details: String(error) }, { status: 500 });
   }
 }

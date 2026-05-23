@@ -45,10 +45,8 @@ export default function ApprovalsPage() {
       })
   })
 
-  const pending = approvals.filter(
-    a => a.status === "PENDING")
-  const resolved = approvals.filter(
-    a => a.status !== "PENDING")
+  const pending = Array.isArray(approvals) ? approvals.filter(a => a.status === "PENDING") : []
+  const resolved = Array.isArray(approvals) ? approvals.filter(a => a.status !== "PENDING") : []
 
   if (isLoading) return (
     <div className="p-6">

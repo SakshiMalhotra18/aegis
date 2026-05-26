@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, X, CheckCircle2, Clock } from "lucide-react";
+import { toast } from "sonner";
 
 type Approval = {
   id: string; status: string; reason: string | null; createdAt: string;
@@ -24,8 +25,14 @@ export default function ApprovalsPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["approvals"] }),
+      }).then(r => { if (!r.ok) throw new Error("Failed to update status"); return r.json(); }),
+    onSuccess: (data, variables) => {
+      qc.invalidateQueries({ queryKey: ["approvals"] });
+      toast.success(`Request ${variables.status.toLowerCase()} successfully`);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update request");
+    }
   });
 
   const pending  = approvals.filter(a => a.status === "PENDING");

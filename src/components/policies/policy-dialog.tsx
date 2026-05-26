@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 export function PolicyDialog({
   open,
@@ -68,7 +69,11 @@ export function PolicyDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["policies"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Policy updated successfully" : "Policy created successfully");
     },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to save policy");
+    }
   });
 
   const handleSubmit = (e: React.FormEvent) => {

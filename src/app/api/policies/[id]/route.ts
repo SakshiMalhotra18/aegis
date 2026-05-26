@@ -1,9 +1,15 @@
 import { prisma } from "@/lib/prisma/client";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
 
 // PATCH /api/policies/:id
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const { name, description, rules, status, agentId } = body;
@@ -27,6 +33,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 // DELETE /api/policies/:id
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     await prisma.policy.delete({ where: { id } });
     return NextResponse.json({ success: true });

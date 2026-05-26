@@ -1,9 +1,16 @@
 import { prisma } from "@/lib/prisma/client";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
+import { writeAuditLog } from "@/lib/audit";
 
 // PATCH /api/agents/:id
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     const { name, description, model, status, riskLevel, blastRadius } = body;
@@ -12,6 +19,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: { name, description, model, status, riskLevel, blastRadius },
     });
+
+    await writeAuditLog("UPDATED", `Agent ${agent.name} settings updated`, agent.id, session.user.id);
     return NextResponse.json(agent);
   } catch {
     return NextResponse.json({ error: "Failed to update agent" }, { status: 500 });
@@ -21,7 +30,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 // DELETE /api/agents/:id
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { id } = await params;
+
+    const agent = await prisma.agent.findUnique({
+      where: { id },
+      select: { name: true }
+    });
+
+    if (!agent) {
+      return NextResponse.json({ error: "Agent not found" }, { status: 404 });
+    }
 
     // Delete related records first to avoid FK constraint errors
     await prisma.auditLog.deleteMany({ where: { agentId: id } });
@@ -29,6 +52,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await prisma.policy.deleteMany({ where: { agentId: id } });
     await prisma.agent.delete({ where: { id } });
 
+    await writeAuditLog("DELETED", `Agent ${agent.name} deleted`, undefined, session.user.id);
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Failed to delete agent" }, { status: 500 });

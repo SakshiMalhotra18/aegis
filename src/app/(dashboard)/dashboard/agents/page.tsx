@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Bot, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AgentDialog } from "@/components/agents/agent-dialog";
@@ -41,7 +42,15 @@ export default function AgentsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/agents/${id}`, { method: "DELETE" }).then(r => { if (!r.ok) throw new Error("Delete failed"); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["agents"] }); setIsDeleteDialogOpen(false); setDeletingAgentId(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agents"] });
+      setIsDeleteDialogOpen(false);
+      setDeletingAgentId(null);
+      toast.success("Agent deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to delete agent");
+    }
   });
 
   return (

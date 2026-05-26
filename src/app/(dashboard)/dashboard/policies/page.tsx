@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Shield } from "lucide-react";
 import { PolicyDialog } from "@/components/policies/policy-dialog";
+import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription,
@@ -26,7 +27,15 @@ export default function PoliciesPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => fetch(`/api/policies/${id}`, { method: "DELETE" }).then(r => { if (!r.ok) throw new Error("Delete failed"); }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["policies"] }); setIsDeleteOpen(false); setDeletingId(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["policies"] });
+      setIsDeleteOpen(false);
+      setDeletingId(null);
+      toast.success("Policy deleted successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to delete policy");
+    }
   });
 
   return (

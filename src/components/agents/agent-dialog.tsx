@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 export function AgentDialog({ open, onOpenChange, agent }: { open: boolean, onOpenChange: (open: boolean) => void, agent?: any }) {
   const queryClient = useQueryClient();
@@ -54,6 +55,10 @@ export function AgentDialog({ open, onOpenChange, agent }: { open: boolean, onOp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
       onOpenChange(false);
+      toast.success(isEditing ? "Agent updated successfully" : "Agent created successfully");
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to save agent");
     }
   });
 

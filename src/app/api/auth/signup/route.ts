@@ -24,7 +24,8 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(user);
+    const { password: _, ...safeUser } = user;
+    return NextResponse.json(safeUser);
   } catch (err: any) {
     console.error("Signup error:", err);
     

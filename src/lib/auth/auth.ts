@@ -7,7 +7,22 @@ import bcrypt from "bcrypt";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-
+  secret: process.env.NEXTAUTH_SECRET,
+  callbacks: {
+    async jwt({ token, user }) {
+      // Persist the user ID to the token after sign in
+      if (user?.id) token.sub = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      // Make the user ID available in the session client side
+      if (token?.sub) {
+        // @ts-ignore – extending session type
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       name: "credentials",

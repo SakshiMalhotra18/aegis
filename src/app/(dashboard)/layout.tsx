@@ -25,6 +25,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     queryKey: ["dashboard-stats"],
     queryFn: () => fetch("/api/dashboard/stats").then(r => r.json()),
     refetchInterval: 10000,
+    retry: 0,
+    staleTime: 60000,
   });
 
   const pendingCount = stats?.pendingApprovals ?? 0;

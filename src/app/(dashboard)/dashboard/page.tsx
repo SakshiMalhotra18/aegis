@@ -73,16 +73,32 @@ function CircularProgress({ value }: { value: number }) {
 }
 
 export default function DashboardPage() {
-  const { data: stats, isLoading } = useQuery<any>({
+  const { data: stats, isLoading, isError } = useQuery<any>({
     queryKey: ["dashboard-stats"],
-    queryFn: () => fetch("/api/dashboard/stats").then(r => r.json()),
-    refetchInterval: 10000,
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard/stats");
+      if (!res.ok) throw new Error("Stats failed");
+      return res.json();
+    },
+    refetchInterval: 30000,
+    retry: 1,
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-32 bg-slate-950 text-slate-100">
         <div className="w-8 h-8 border-2 rounded-full animate-spin border-violet-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-6">
+        <div className="text-center">
+          <p className="text-red-400 font-medium mb-2">Failed to load dashboard stats</p>
+          <p className="text-slate-500 text-sm">Check that your database connection is working correctly</p>
+        </div>
       </div>
     );
   }

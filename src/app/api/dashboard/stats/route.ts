@@ -1,40 +1,53 @@
 import { prisma } from "@/lib/prisma/client";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
 
 export async function GET() {
   try {
-    const [totalAgents, totalPolicies, pendingApprovals, todayAudits, highRiskAgents, recentAudits] = await Promise.all([
+    const session = await auth();
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [
+      totalAgents,
+      activePolicies,
+      pendingApprovals,
+      todayLogs,
+      highRiskCount,
+      recentLogs,
+    ] = await Promise.all([
       prisma.agent.count(),
-      prisma.policy.count(),
+      prisma.policy.count({ where: { status: "ACTIVE" } }),
       prisma.approval.count({ where: { status: "PENDING" } }),
-      prisma.auditLog.count({
-        where: {
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
-        },
-      }),
-      prisma.agent.findMany({
-        where: { riskLevel: { in: ["HIGH", "CRITICAL"] } },
-        select: { id: true, name: true, riskLevel: true },
-      }),
+      prisma.auditLog.count({ where: { createdAt: { gte: today } } }),
+      prisma.agent.count({ where: { riskLevel: { in: ["HIGH", "CRITICAL"] } } }),
       prisma.auditLog.findMany({
         orderBy: { createdAt: "desc" },
         take: 5,
-        select: { id: true, action: true, message: true, agentId: true, userId: true, createdAt: true },
+        include: {
+          agent: { select: { name: true } },
+          user: { select: { email: true, name: true } },
+        },
       }),
     ]);
 
     return NextResponse.json({
       totalAgents,
-      activePolicies: totalPolicies,
+      activePolicies,
       pendingApprovals,
-      todayLogs: todayAudits,
-      highRiskCount: highRiskAgents,
-      recentLogs: recentAudits,
+      todayLogs,
+      highRiskCount,
+      recentLogs,
     });
-  } catch (error) {
-    console.error("Failed to fetch dashboard stats:", error);
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
+  } catch (error: any) {
+    console.error("Stats route error:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch stats", detail: error.message },
+      { status: 500 }
+    );
   }
 }

@@ -22,3 +22,11 @@ export function hashApiKey(key: string): string {
     .update(key)
     .digest("hex")
 }
+
+export function getApiKeyFromHeader(req: { headers: { get(name: string): string | null } }): string | null {
+  const auth = req.headers.get("authorization") ?? req.headers.get("Authorization")
+  if (!auth) return null
+  const parts = auth.split(" ")
+  if (parts.length !== 2 || parts[0].toLowerCase() !== "bearer") return null
+  return parts[1] ?? null
+}

@@ -8,6 +8,9 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
+// ─── Enums ────────────────────────────────────────────────
+
 enum AgentStatus {
   ACTIVE
   INACTIVE
@@ -41,13 +44,13 @@ enum AuditAction {
   TRIGGERED
 }
 
+// ─── Core Models ──────────────────────────────────────────
+
 model User {
-  id            String   @id @default(uuid())
+  id            String   @id @default(cuid())
   email         String   @unique
   name          String?
   password      String
-  emailVerified DateTime?
-  image         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -55,81 +58,133 @@ model User {
   policies      Policy[]
   approvals     Approval[]
   auditLogs     AuditLog[]
+  apiKeys       ApiKey[]
 }
 
 model Agent {
-  id          String      @id @default(uuid())
-  name        String
-  description String?
-  model       String
-  status      AgentStatus @default(ACTIVE)
-  riskLevel   RiskLevel   @default(LOW)
-  blastRadius Int         @default(0)
+  id            String       @id @default(cuid())
+  name          String
+  description   String?
+  status        AgentStatus  @default(ACTIVE)
+  riskLevel     RiskLevel    @default(LOW)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  policies  Policy[]
-  approvals Approval[]
-  auditLogs AuditLog[]
+  policies      Policy[]
+  approvals     Approval[]
+  auditLogs     AuditLog[]
+  interactions Interaction[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([ownerId])
+  @@index([userId])
 }
 
 model Policy {
-  id          String       @id @default(uuid())
-  name        String
-  description String
-  rules       String
-  status      PolicyStatus @default(ACTIVE)
+  id            String       @id @default(cuid())
+  name          String
+  description   String?
+  rules         Json
+  status        PolicyStatus @default(ACTIVE)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  agentId String?
-  agent   Agent?  @relation(fields: [agentId], references: [id])
+  agentId       String?
+  agent         Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  approvals     Approval[]
+  auditLogs     AuditLog[]
 
-  @@index([ownerId])
+  @@index([userId])
   @@index([agentId])
 }
 
 model Approval {
-  id     String         @id @default(uuid())
-  status ApprovalStatus @default(PENDING)
-  reason String?
+  id            String         @id @default(cuid())
+  status        ApprovalStatus @default(PENDING)
+  reason        String?
+  reviewedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  agentId String
-  agent   Agent  @relation(fields: [agentId], references: [id])
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  agentId       String?
+  agent         Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  policyId      String?
+  policy        Policy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
 
-  @@index([agentId])
+  auditLogs     AuditLog[]
+
   @@index([userId])
+  @@index([agentId])
+  @@index([policyId])
 }
 
 model AuditLog {
-  id      String      @id @default(uuid())
-  action  AuditAction
-  message String
+  id            String      @id @default(cuid())
+  action        AuditAction
+  resourceType  String
+  resourceId    String?
+  details       Json?
+  createdAt     DateTime @default(now())
 
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
+  userId        String?
+  user          User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  agentId String?
-  agent   Agent?  @relation(fields: [agentId], references: [id])
+  agentId       String?
+  agent         Agent? @relation(fields: [agentId], references: [id], onDelete: SetNull)
 
-  createdAt DateTime @default(now())
+  policyId      String?
+  policy        Policy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  approvalId    String?
+  approval      Approval? @relation(fields: [approvalId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([agentId])
+  @@index([policyId])
+  @@index([approvalId])
+}
+
+model ApiKey {
+  id            String   @id @default(cuid())
+  name          String
+  keyHash       String   @unique
+  keyPrefix     String
+  isActive      Boolean  @default(true)
+  lastUsedAt    DateTime?
+  createdAt     DateTime @default(now())
+
+  userId        String
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([keyHash])
+  @@index([userId])
+}
+
+model Interaction {
+  id            String   @id @default(cuid())
+  prompt        String   @db.Text
+  response      String   @db.Text @default("")
+  model         String   @default("unknown")
+  tokensUsed    Int      @default(0)
+  riskScore     Int      @default(0)
+  flagged       Boolean  @default(false)
+  flagReason    String?
+  metadata      Json?
+  createdAt     DateTime @default(now())
+
+  agentId       String
+  agent         Agent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([flagged])
+  @@index([createdAt])
 }

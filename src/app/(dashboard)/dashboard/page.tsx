@@ -262,7 +262,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <p className="text-xs text-slate-300 font-medium leading-relaxed mt-0.5">
-                      {log.message}
+                      {typeof log.message === 'object' ? JSON.stringify(log.message) : log.message}
                     </p>
                     <div className="flex items-center justify-between text-[9px] text-slate-500 border-t border-slate-800/40 pt-1.5 mt-1">
                       <span>{log.agent?.name ?? "System"}</span>

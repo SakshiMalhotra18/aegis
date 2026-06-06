@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Bot, Shield, CheckCircle, FileText,
-  ChevronRight, Bell, Settings, Key, Activity
+  ChevronRight, Bell, Settings, Key, Activity, Search
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { label: "Policies",   route: "/dashboard/policies",  icon: Shield },
   { label: "API Keys", route: "/dashboard/keys", icon: Key },
   { label: "Interactions", route: "/dashboard/interactions", icon: Activity },
+  { label: "Scanner", route: "/scanner", icon: Search },
   { label: "Approvals",  route: "/dashboard/approvals", icon: CheckCircle },
   { label: "Audit Logs", route: "/dashboard/audit",     icon: FileText },
 ];

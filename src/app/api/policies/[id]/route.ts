@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
+import { writeAuditLog } from "@/lib/audit";
+import { AuditAction } from "@prisma/client";
 
 // PATCH /api/policies/:id
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +26,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         agentId: agentId || null,
       },
     });
+    await writeAuditLog({
+      userId: session.user.id,
+      action: AuditAction.UPDATED,
+      resourceType: "Policy",
+      resourceId: policy.id,
+      details: { name: policy.name },
+      policyId: policy.id,
+    });
     return NextResponse.json(policy);
   } catch {
     return NextResponse.json({ error: "Failed to update policy" }, { status: 500 });
@@ -40,6 +50,14 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     const { id } = await params;
     await prisma.policy.delete({ where: { id } });
+    await writeAuditLog({
+      userId: session.user.id,
+      action: AuditAction.DELETED,
+      resourceType: "Policy",
+      resourceId: id,
+      details: {},
+      policyId: id,
+    });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Failed to delete policy" }, { status: 500 });

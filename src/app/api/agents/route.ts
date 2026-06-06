@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { z } from "zod";
 import { writeAuditLog } from "@/lib/audit";
+import { AuditAction } from "@prisma/client";
 
 const agentSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -53,11 +54,18 @@ export async function POST(req: Request) {
         status: status || "ACTIVE",
         riskLevel,
         blastRadius,
-        ownerId: session.user.id,
+        userId: session.user.id,
       },
     });
 
-    await writeAuditLog("CREATED", `Agent ${name} created`, agent.id, session.user.id);
+    await writeAuditLog({
+  userId: session.user.id,
+  action: AuditAction.CREATED,
+  resourceType: "Agent",
+  resourceId: agent.id,
+  details: { name },
+  agentId: agent.id,
+});
     return NextResponse.json(agent, { status: 201 });
   } catch (err: any) {
     console.error("Failed to create agent:", err);

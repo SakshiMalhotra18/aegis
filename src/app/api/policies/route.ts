@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { z } from "zod";
 import { writeAuditLog } from "@/lib/audit";
+import { AuditAction } from "@prisma/client";
 
 const policySchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -34,12 +35,19 @@ export async function POST(req: Request) {
         description: description || "",
         rules,
         status: status || "ACTIVE",
-        ownerId: session.user.id,
+        userId: session.user.id,
         agentId: agentId || null,
       },
     });
 
-    await writeAuditLog("CREATED", `Policy ${name} created`, agentId || undefined, session.user.id);
+    await writeAuditLog({
+  userId: session.user.id,
+  action: AuditAction.CREATED,
+  resourceType: "Policy",
+  resourceId: policy.id,
+  details: { name: policy.name },
+  policyId: policy.id,
+});
     return NextResponse.json(policy, { status: 201 });
   } catch (e) {
     console.error(e);

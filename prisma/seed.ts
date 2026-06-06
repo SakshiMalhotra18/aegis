@@ -19,7 +19,7 @@ async function main() {
       name: "Agent Low",
       model: "gpt-4",
       riskLevel: RiskLevel.LOW,
-      ownerId: user.id,
+      userId: user.id,
     },
   });
 
@@ -28,7 +28,7 @@ async function main() {
       name: "Agent Medium",
       model: "gpt-4",
       riskLevel: RiskLevel.MEDIUM,
-      ownerId: user.id,
+      userId: user.id,
     },
   });
 
@@ -37,7 +37,7 @@ async function main() {
       name: "Agent High",
       model: "gpt-4",
       riskLevel: RiskLevel.HIGH,
-      ownerId: user.id,
+      userId: user.id,
     },
   });
 
@@ -47,7 +47,7 @@ async function main() {
       description: "Policy 1 description",
       rules: "Rules 1",
       status: "ACTIVE",
-      ownerId: user.id,
+      userId: user.id,
       agentId: agent1.id,
     },
   });
@@ -58,7 +58,7 @@ async function main() {
       description: "Policy 2 description",
       rules: "Rules 2",
       status: "ACTIVE",
-      ownerId: user.id,
+      userId: user.id,
       agentId: agent2.id,
     },
   });
@@ -91,7 +91,8 @@ async function main() {
     await prisma.auditLog.create({
       data: {
         action: actions[i],
-        message: `Action ${actions[i]} occurred`,
+        resourceType: "AuditLog",
+        details: { message: `Action ${actions[i]} occurred` },
         userId: user.id,
         agentId: agent1.id,
       },

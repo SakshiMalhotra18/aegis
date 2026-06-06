@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { AuditAction } from "@prisma/client";
 
 // PATCH /api/approvals/:id
 export async function PATCH(
@@ -31,12 +32,15 @@ export async function PATCH(
       include: { agent: { select: { name: true } } },
     });
 
-    await writeAuditLog(
-      status === "APPROVED" ? "APPROVED" : "REJECTED",
-      `Approval for ${approval.agent?.name ?? "Unknown Agent"} ${status} by administrator`,
-      approval.agentId,
-      session.user.id
-    );
+    await writeAuditLog({
+      userId: session.user.id,
+      action: status === "APPROVED" ? AuditAction.APPROVED : AuditAction.REJECTED,
+      resourceType: "Approval",
+      resourceId: approval.id,
+      details: { status },
+      approvalId: approval.id,
+      agentId: approval.agentId,
+    });
 
     return NextResponse.json(approval);
   } catch (error) {

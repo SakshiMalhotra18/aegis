@@ -24,7 +24,26 @@ export async function GET() {
     const agents = await prisma.agent.findMany({
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(agents);
+    const processedAgents = agents.map(agent => {
+      let desc = agent.description || "";
+      let m = "gpt-4o";
+      let br = 10;
+      try {
+        if (agent.description && agent.description.startsWith("{")) {
+          const parsed = JSON.parse(agent.description);
+          desc = parsed.text ?? "";
+          m = parsed.model ?? "gpt-4o";
+          br = parsed.blastRadius ?? 10;
+        }
+      } catch {}
+      return {
+        ...agent,
+        description: desc,
+        model: m,
+        blastRadius: br,
+      };
+    });
+    return NextResponse.json(processedAgents);
   } catch {
     return NextResponse.json({ error: "Failed to fetch agents" }, { status: 500 });
   }
@@ -46,27 +65,38 @@ export async function POST(req: Request) {
 
     const { name, description, model, status, riskLevel, blastRadius } = result.data;
 
+    const descPayload = JSON.stringify({
+      text: description || "",
+      model: model || "gpt-4o",
+      blastRadius: blastRadius || 10,
+    });
+
     const agent = await prisma.agent.create({
       data: {
         name,
-        description,
-        model,
+        description: descPayload,
         status: status || "ACTIVE",
         riskLevel,
-        blastRadius,
         userId: session.user.id,
       },
     });
 
+    const responseAgent = {
+      ...agent,
+      description: description || "",
+      model: model || "gpt-4o",
+      blastRadius: blastRadius || 10,
+    };
+
     await writeAuditLog({
-  userId: session.user.id,
-  action: AuditAction.CREATED,
-  resourceType: "Agent",
-  resourceId: agent.id,
-  details: { name },
-  agentId: agent.id,
-});
-    return NextResponse.json(agent, { status: 201 });
+      userId: session.user.id,
+      action: AuditAction.CREATED,
+      resourceType: "Agent",
+      resourceId: agent.id,
+      details: { name },
+      agentId: agent.id,
+    });
+    return NextResponse.json(responseAgent, { status: 201 });
   } catch (err: any) {
     console.error("Failed to create agent:", err);
     return NextResponse.json({ error: "Failed to create agent" }, { status: 500 });

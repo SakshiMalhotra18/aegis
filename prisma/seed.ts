@@ -17,7 +17,7 @@ async function main() {
   const agent1 = await prisma.agent.create({
     data: {
       name: "Agent Low",
-      model: "gpt-4",
+      description: JSON.stringify({ text: "Agent Low description", model: "gpt-4", blastRadius: 10 }),
       riskLevel: RiskLevel.LOW,
       userId: user.id,
     },
@@ -26,7 +26,7 @@ async function main() {
   const agent2 = await prisma.agent.create({
     data: {
       name: "Agent Medium",
-      model: "gpt-4",
+      description: JSON.stringify({ text: "Agent Medium description", model: "gpt-4", blastRadius: 10 }),
       riskLevel: RiskLevel.MEDIUM,
       userId: user.id,
     },
@@ -35,7 +35,7 @@ async function main() {
   const agent3 = await prisma.agent.create({
     data: {
       name: "Agent High",
-      model: "gpt-4",
+      description: JSON.stringify({ text: "Agent High description", model: "gpt-4", blastRadius: 10 }),
       riskLevel: RiskLevel.HIGH,
       userId: user.id,
     },

@@ -65,8 +65,6 @@ model Agent {
   id            String       @id @default(cuid())
   name          String
   description   String?
-  model         String?
-  blastRadius   Int?     @default(10)
   status        AgentStatus  @default(ACTIVE)
   riskLevel     RiskLevel    @default(LOW)
   createdAt     DateTime @default(now())

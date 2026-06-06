@@ -16,20 +16,38 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json();
     const { name, description, model, status, riskLevel, blastRadius } = body;
 
-    const agent = await prisma.agent.update({
-      where: { id },
-      data: { name, description, model, status, riskLevel, blastRadius },
+    const descPayload = JSON.stringify({
+      text: description || "",
+      model: model || "gpt-4o",
+      blastRadius: blastRadius || 10,
     });
 
+    const agent = await prisma.agent.update({
+      where: { id },
+      data: {
+        name,
+        description: descPayload,
+        status,
+        riskLevel,
+      },
+    });
+
+    const responseAgent = {
+      ...agent,
+      description: description || "",
+      model: model || "gpt-4o",
+      blastRadius: blastRadius || 10,
+    };
+
     await writeAuditLog({
-  userId: session.user.id,
-  action: AuditAction.UPDATED,
-  resourceType: "Agent",
-  resourceId: agent.id,
-  details: { name: agent.name },
-  agentId: agent.id,
-});
-    return NextResponse.json(agent);
+      userId: session.user.id,
+      action: AuditAction.UPDATED,
+      resourceType: "Agent",
+      resourceId: agent.id,
+      details: { name: agent.name },
+      agentId: agent.id,
+    });
+    return NextResponse.json(responseAgent);
   } catch {
     return NextResponse.json({ error: "Failed to update agent" }, { status: 500 });
   }
